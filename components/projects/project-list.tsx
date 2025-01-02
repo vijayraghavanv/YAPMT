@@ -16,6 +16,7 @@ import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { useRouter } from "next/navigation";
+import { getProjects, deleteProject } from "@/app/actions";
 
 export function ProjectList() {
   const router = useRouter();
@@ -23,7 +24,7 @@ export function ProjectList() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showAllProjects, setShowAllProjects] = useState(false);
-  const [deleteProject, setDeleteProject] = useState<{
+  const [deleteProjectDialog, setDeleteProjectDialog] = useState<{
     id: number;
     name: string;
   } | null>(null);
@@ -31,11 +32,7 @@ export function ProjectList() {
 
   const fetchProjects = async () => {
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/projects`);
-      if (!response.ok) {
-        throw new Error('Failed to fetch projects');
-      }
-      const data = await response.json();
+      const data = await getProjects();
       setProjects(data);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load projects');
@@ -45,26 +42,16 @@ export function ProjectList() {
   };
 
   const handleDeleteProject = async () => {
-    if (!deleteProject) return;
+    if (!deleteProjectDialog) return;
 
     try {
-      const response = await fetch(
-        `${process.env.NEXT_PUBLIC_BACKEND_URL}/projects/${deleteProject.id}`,
-        {
-          method: 'DELETE',
-        }
-      );
-
-      if (!response.ok) {
-        throw new Error('Failed to delete project');
-      }
-
+      await deleteProject(deleteProjectDialog.id);
       // Refresh the projects list
-      fetchProjects();
+      await fetchProjects();
     } catch (error) {
       console.error('Error deleting project:', error);
     } finally {
-      setDeleteProject(null);
+      setDeleteProjectDialog(null);
     }
   };
 
@@ -166,7 +153,7 @@ export function ProjectList() {
                   </DropdownMenuItem>
                   <DropdownMenuItem
                     className="text-destructive focus:text-destructive"
-                    onClick={() => setDeleteProject({ id: project.id, name: project.name })}
+                    onClick={() => setDeleteProjectDialog({ id: project.id, name: project.name })}
                   >
                     Delete
                   </DropdownMenuItem>
@@ -189,9 +176,9 @@ export function ProjectList() {
         ))}
       </div>
       <DeleteProjectDialog
-        projectName={deleteProject?.name ?? ''}
-        open={!!deleteProject}
-        onOpenChange={(open) => !open && setDeleteProject(null)}
+        projectName={deleteProjectDialog?.name ?? ''}
+        open={!!deleteProjectDialog}
+        onOpenChange={(open) => !open && setDeleteProjectDialog(null)}
         onConfirm={handleDeleteProject}
       />
       <ProjectDialog

@@ -19,4 +19,6 @@ export interface PromptVersion {
   prompt_description: string;
   project_id: number;
   output_schema: Record<string, unknown> | null;
+  is_current: boolean;
+  has_structured_output: boolean;
 }

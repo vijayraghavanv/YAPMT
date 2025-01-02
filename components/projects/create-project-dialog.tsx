@@ -22,6 +22,7 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { useState, useEffect } from "react";
 import { Project, ProjectStatus } from "@/types/project";
+import { createOrUpdateProject } from "@/app/actions";
 
 interface ProjectDialogProps {
   mode: 'create' | 'edit';
@@ -95,22 +96,7 @@ export function ProjectDialog({
         tags: tags.split(",").map((tag) => tag.trim()).filter(Boolean),
       };
 
-      const url = mode === 'create' 
-        ? `${process.env.NEXT_PUBLIC_BACKEND_URL}/projects`
-        : `${process.env.NEXT_PUBLIC_BACKEND_URL}/projects/${project?.id}`;
-
-      const response = await fetch(url, {
-        method: mode === 'create' ? 'POST' : 'PUT',
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(projectData),
-      });
-
-      if (!response.ok) {
-        throw new Error(mode === 'create' ? "Failed to create project" : "Failed to update project");
-      }
-
+      await createOrUpdateProject(projectData, mode === 'edit' ? project?.id : undefined);
       onProjectCreated();
       onOpenChange(false);
       resetForm();

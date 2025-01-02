@@ -8,6 +8,7 @@ import { Check } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { LLMSetupState } from "@/types/settings";
 import { useRouter } from "next/navigation";
+import { saveSetting } from "@/app/actions";
 
 const steps = [
   { title: "Choose LLM", description: "Select your Language Model provider" },
@@ -34,28 +35,12 @@ export function LLMSetup() {
       setError(null);
       
       try {
-        const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/settings`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            key: state.selectedLLM === 'openai' ? 'openai_api_key' : 'anthropic_api_key',
-            type: 'api_key',
-            value: state.apiKey,
-            description: `${state.selectedLLM === 'openai' ? 'OpenAI' : 'Anthropic'} API key for GPT models`
-          })
+        await saveSetting({
+          key: state.selectedLLM === 'openai' ? 'openai_api_key' : 'anthropic_api_key',
+          type: 'api_key',
+          value: state.apiKey,
+          description: `${state.selectedLLM === 'openai' ? 'OpenAI' : 'Anthropic'} API key for GPT models`
         });
-
-        if (!response.ok) {
-          const errorData = await response.json().catch(() => null);
-          throw new Error(errorData?.message || 'Failed to save API key');
-        }
-
-        const data = await response.json();
-        if (!data.key) {
-          throw new Error('Invalid response from server');
-        }
 
         // Refresh the page to trigger settings check
         router.refresh();

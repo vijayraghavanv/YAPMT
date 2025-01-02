@@ -16,6 +16,7 @@ import {
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { AlertCircle, HelpCircle, PlusCircle } from "lucide-react"
 import { PromptVariable } from "@/types/prompt-version"
+import { createOrUpdatePrompt } from "@/app/actions"
 
 interface CreatePromptFormData {
   id?: number
@@ -178,48 +179,32 @@ export function CreatePromptDialog({
     setError(null);
     
     try {
-      const response = await fetch(
-        `${process.env.NEXT_PUBLIC_BACKEND_URL}/prompts${
-          mode === 'edit' ? `/${initialData?.id}` : ''
-        }`,
-        {
-          method: mode === 'edit' ? 'PUT' : 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            ...formData,
-            project_id: projectId,
-          }),
-        }
-      );
+      await createOrUpdatePrompt({
+        ...formData,
+        project_id: projectId,
+      }, mode === 'edit' ? initialData?.id : undefined);
 
-      const responseData = await response.json();
-      console.log('Response:', {
-        status: response.status,
-        ok: response.ok,
-        data: responseData
-      });
-
-      if (!response.ok) {
-        // Log the exact error response
-        console.log('Error response structure:', responseData);
-        
-        // Check the exact structure of the error
-        const errorMessage = responseData?.message || 
-                           responseData?.error?.message ||
-                           responseData?.error ||
-                           'Failed to create prompt';
-        console.log('Setting error message to:', errorMessage);
-        setError(errorMessage);
-        return;
+      if (onSuccess) {
+        onSuccess();
       }
-
-      onSuccess?.();
+      
       setOpen(false);
+      setStep(1);
+      setFormData({
+        name: "",
+        description: "",
+        content: "",
+        project_id: projectId,
+        variables: [],
+        max_tokens: 2000,
+        temperature: 0.7,
+        status: "draft",
+        has_structured_output: false,
+        output_schema: null
+      });
     } catch (err) {
-      console.error('Unexpected error:', err);
-      setError('An unexpected error occurred');
+      console.error('Error creating/updating prompt:', err);
+      setError(err instanceof Error ? err.message : 'Failed to create/update prompt');
     }
   }
 

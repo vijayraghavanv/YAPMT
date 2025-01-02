@@ -4,6 +4,7 @@ import { LLMSetup } from "@/components/setup/llm-setup";
 import { ProjectList } from "@/components/projects/project-list";
 import { Setting } from "@/types/settings";
 import { useEffect, useState } from "react";
+import { getSettings } from "./actions";
 
 export default function Home() {
   const [settings, setSettings] = useState<Setting[]>([]);
@@ -12,8 +13,7 @@ export default function Home() {
   useEffect(() => {
     const fetchSettings = async () => {
       try {
-        const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/settings`);
-        const data = await response.json();
+        const data = await getSettings();
         setSettings(data);
       } catch (error) {
         console.error('Error fetching settings:', error);
