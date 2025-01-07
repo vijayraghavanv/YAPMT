@@ -61,7 +61,7 @@ export function CreatePromptDialog({
     content: "",
     project_id: projectId,
     variables: [],
-    max_tokens: 2000,
+    max_tokens: 0,
     temperature: 0.7,
     status: "draft",
     has_structured_output: false,
@@ -76,6 +76,9 @@ export function CreatePromptDialog({
       const matches = initialData.content.match(/\{([^}]+)\}/g) || []
       const vars = matches.map(match => match.slice(1, -1))
       setExtractedVariables([...new Set(vars)])
+      setJsonSchemaText(
+          JSON.stringify(formData.output_schema, null, 2) || ""
+      )
     }
   }, [initialData])
 
@@ -196,7 +199,7 @@ export function CreatePromptDialog({
         content: "",
         project_id: projectId,
         variables: [],
-        max_tokens: 2000,
+        max_tokens: 0,
         temperature: 0.7,
         status: "draft",
         has_structured_output: false,
@@ -223,7 +226,7 @@ export function CreatePromptDialog({
           content: "",
           project_id: projectId,
           variables: [],
-          max_tokens: 2000,
+          max_tokens: 0,
           temperature: 0.7,
           status: "draft",
           has_structured_output: false,
@@ -354,7 +357,7 @@ export function CreatePromptDialog({
             />
             <div className="flex justify-between text-xs text-muted-foreground mt-1">
               <span>0</span>
-              <span>0.5</span>
+              <span>{formData.temperature}</span>
               <span>1</span>
             </div>
           </div>
@@ -378,15 +381,15 @@ export function CreatePromptDialog({
             <Slider
               defaultValue={[formData.max_tokens]}
               onValueChange={([value]) => setFormData({ ...formData, max_tokens: value })}
-              min={1}
-              max={8000}
-              step={1}
+              min={0}
+              max={200000}
+              step={100}
               className="w-full"
             />
             <div className="flex justify-between text-xs text-muted-foreground mt-1">
-              <span>1</span>
+              <span>0</span>
               <span>{formData.max_tokens}</span>
-              <span>8000</span>
+              <span>200000</span>
             </div>
           </div>
         </div>
@@ -487,31 +490,35 @@ export function CreatePromptDialog({
   }
 
   const renderJsonSchemaStep = () => (
-    <form onSubmit={handleNext} className="space-y-4">
-      <div className="space-y-2">
-        <Label htmlFor="json-schema">Output Schema (JSON)</Label>
-        <Textarea
-          id="json-schema"
-          value={jsonSchemaText}
-          onChange={(e) => {
-            setJsonSchemaText(e.target.value)
-            setJsonSchemaError(null) // Clear any previous errors
-          }}
-          className="font-mono h-[300px]"
-          placeholder="Enter your JSON schema here..."
-        />
-        {jsonSchemaError && (
-          <Alert variant="destructive" className="mt-2">
-            <AlertCircle className="h-4 w-4" />
-            <AlertTitle>Error</AlertTitle>
-            <AlertDescription>{jsonSchemaError}</AlertDescription>
-          </Alert>
-        )}
-      </div>
-      {renderFooter()}
-    </form>
+      <form onSubmit={handleNext} className="space-y-4">
+        <div className="space-y-2">
+          <Label htmlFor="json-schema">Output Schema (JSON)</Label>
+          <Textarea
+              id="json-schema"
+              value={jsonSchemaText} // Changed from JSON.stringify(formData.output_schema)
+              onChange={(e) => {
+                setJsonSchemaText(e.target.value)
+                try {
+                  JSON.parse(e.target.value) // Test if valid JSON
+                  setJsonSchemaError(null) // Only clear error if JSON is valid
+                } catch (err) {
+                  setJsonSchemaError("Invalid JSON format")
+                }
+              }}
+              className="font-mono h-[300px]"
+              placeholder="Enter your JSON schema here..."
+          />
+          {jsonSchemaError && (
+              <Alert variant="destructive" className="mt-2">
+                <AlertCircle className="h-4 w-4" />
+                <AlertTitle>Error</AlertTitle>
+                <AlertDescription>{jsonSchemaError}</AlertDescription>
+              </Alert>
+          )}
+        </div>
+        {renderFooter()}
+      </form>
   )
-
   const renderCurrentStep = () => {
     if (step === 1) {
       return renderStep1()

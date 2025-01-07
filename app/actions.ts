@@ -221,15 +221,16 @@ export async function runPrompt(payload: RunPayload): Promise<RunResponse> {
 }
 
 export async function createOrUpdatePrompt(promptData: CreatePromptData, promptId?: number): Promise<Prompt> {
-  const method = promptId ? 'PUT' : 'POST'
-  const url = promptId ? `${BACKEND_URL}/prompts/${promptId}` : `${BACKEND_URL}/prompts`
+  const requestData = promptId
+      ? { ...promptData, id: promptId }
+      : promptData
 
-  const response = await fetch(url, {
-    method,
+  const response = await fetch(`${BACKEND_URL}/prompts`, {
+    method: 'POST',
     headers: {
       'Content-Type': 'application/json',
     },
-    body: JSON.stringify(promptData),
+    body: JSON.stringify(requestData),
   })
 
   if (!response.ok) {
